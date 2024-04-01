@@ -92,10 +92,11 @@ public class CupsPrinter {
    * Print method
    *
    * @param printJob
+   * @param sslConn
    * @return PrintRequestResult
    * @throws Exception
    */
-  public PrintRequestResult print(PrintJob printJob) throws Exception {
+  public PrintRequestResult print(PrintJob printJob, boolean sslConn) throws Exception {
     int ippJobID = -1;
     InputStream document = printJob.getDocument();
     String userName = printJob.getUserName();
@@ -168,7 +169,7 @@ public class CupsPrinter {
       addAttribute(attributes, "job-attributes", "sides:keyword:two-sided-long-edge");
     }
     IppPrintJobOperation command = new IppPrintJobOperation(printerURL.getPort());
-    IppResult ippResult = command.request(this, printerURL, attributes, document, creds);
+    IppResult ippResult = command.request(this, printerURL, attributes, document, creds, sslConn);
     PrintRequestResult result = new PrintRequestResult(ippResult);
     // IppResultPrinter.print(result);
 

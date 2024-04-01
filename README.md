@@ -22,7 +22,9 @@ To import and use **cups4j** in your project, add the following dependency in yo
 <dependency>
     <groupId>org.cups4j</groupId>
     <artifactId>cups4j</artifactId>
-    <version>0.7.6</version>
+    <version>0.7.9-MIA-Changes</version>
+    <scope>system</scope>
+    <systemPath>${project.basedir}/lib/cups4j/cups4j-0.7.9-MIA-Changes.jar</systemPath>
 </dependency>
 ```
 
@@ -45,7 +47,7 @@ CupsClient cupsClient = new CupsClient("127.0.0.1", 631);
 ### Get specific printer by URL
 ```java
 URL printerURL = new URL("http://127.0.0.1:631/printers/printer-name");
-CupsPrinter cupsPrinter = cupsClient.getPrinter(printerURL);
+CupsPrinter cupsPrinter = cupsClient.getPrinter(printerURL, true);
 ```
 
 ### Add extra PrintJob attributes
@@ -66,6 +68,8 @@ PrintJob printJob = new PrintJob.Builder(bytes)
                                 .resolution("300dpi")
                                 .attributes(attributes)
                                 .build();
+
+PrintRequestResult result = cupsPrinter.print(printJob, true);
 ```
 
 ## License

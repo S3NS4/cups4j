@@ -130,23 +130,25 @@ public class CupsClient {
 
   /**
    * Returns all available printers
-   * 
+   * @param sslConn
+   *          to use ssl connection or not (https or http)
    * @return List of Printers
    * @throws Exception
    */
-  public List<CupsPrinter> getPrinters() throws Exception {
-    return new CupsGetPrintersOperation(port).getPrinters(host, port, creds);
+  public List<CupsPrinter> getPrinters(boolean sslConn) throws Exception {
+    return new CupsGetPrintersOperation(port).getPrinters(host, port, creds, sslConn);
   }
 
   /**
    * Returns all available printers except CUPS specific default printer
-   * 
+   * @param sslConn
+   *          to use ssl connection or not (https or http)
    * @return List of Printers
    * @throws Exception
    */
-  public List<CupsPrinter> getPrintersWithoutDefault() throws Exception {
+  public List<CupsPrinter> getPrintersWithoutDefault(boolean sslConn) throws Exception {
     CupsGetPrintersOperation cgp = new CupsGetPrintersOperation();
-    List<CupsPrinter> result = cgp.getPrinters(host, port, creds);
+    List<CupsPrinter> result = cgp.getPrinters(host, port, creds, sslConn);
     return result;
   }
 
@@ -155,11 +157,13 @@ public class CupsClient {
    * 
    * @param printerURL
    *          an URL like http://localhost:631/printers/printername
+   * @param sslConn
+   *          to use ssl connection or not (https or http)
    * @return printer
    * @throws Exception
    */
-  public CupsPrinter getPrinter(URL printerURL) throws Exception {
-    List<CupsPrinter> printers = getPrinters();
+  public CupsPrinter getPrinter(URL printerURL, boolean sslConn) throws Exception {
+    List<CupsPrinter> printers = getPrinters(sslConn);
     for (CupsPrinter printer : printers) {
       if (printer.getPrinterURL().toString().equals(printerURL.toString()))
         return printer;
@@ -169,14 +173,15 @@ public class CupsClient {
 
   /**
    * Returns the printer for the provided name
-   *
    * @param printerName
+   *          the printer name
+   * @param sslConn
    *          the printer name
    * @return printer
    * @throws Exception
    */
-  public CupsPrinter getPrinter(String printerName) throws Exception {
-    List<CupsPrinter> printers = getPrinters();
+  public CupsPrinter getPrinter(String printerName, boolean sslConn) throws Exception {
+    List<CupsPrinter> printers = getPrinters(sslConn);
     for (CupsPrinter printer : printers) {
       if (printer.getName().equals(printerName))
         return printer;
@@ -196,14 +201,15 @@ public class CupsClient {
 
   /**
    * Returns the printer for the provided URL on the current host
-   *
+   * @param sslConn
+   *          to use ssl connection or not (https or http)
    * @param printerURL
    *          a URL like /printers/printername
    * @return printer
    * @throws Exception
    */
-  public CupsPrinter getPrinterOnCurrentHost(String printerURL) throws Exception {
-    return getPrinter(new URL("http://" + host + ":" + port + printerURL));
+  public CupsPrinter getPrinterOnCurrentHost(String printerURL, boolean sslConn) throws Exception {
+    return getPrinter(new URL("http" + (sslConn ? "s" : "") + "://" + host + ":" + port + printerURL), sslConn);
   }
 
   /**

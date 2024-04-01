@@ -46,7 +46,7 @@ public class CupsGetPrintersOperation extends IppOperation {
     this.ippPort = port;
   }
 
-  public List<CupsPrinter> getPrinters(String hostname, int port, CupsAuthentication creds) throws Exception {
+  public List<CupsPrinter> getPrinters(String hostname, int port, CupsAuthentication creds, boolean sslConn) throws Exception {
     List<CupsPrinter> printers = new ArrayList<CupsPrinter>();
 
     Map<String, String> map = new HashMap<String, String>();
@@ -56,7 +56,7 @@ public class CupsGetPrintersOperation extends IppOperation {
     // map.put("requested-attributes", "all");
     this.ippPort = port;
 
-    IppResult result = request(null, new URL("http://" + hostname + ":" + port + "/printers"), map, creds);
+    IppResult result = request(null, new URL("http" + (sslConn ? "s" : "") + "://" + hostname + ":" + port + "/printers"), map, creds, sslConn);
 
     for (AttributeGroup group : result.getAttributeGroupList()) {
       CupsPrinter printer = null;
@@ -82,10 +82,10 @@ public class CupsGetPrintersOperation extends IppOperation {
 
         for (Attribute attr : group.getAttribute()) {
           if (attr.getName().equals("printer-uri-supported")) {
-            printerURI = getAttributeValue(attr).replace("ipp://", "http://");
-            printerURI = StringUtils.remove(printerURI, "http://");
-            printerURI = StringUtils.substringAfter(printerURI, "/");
-            printerURI = "http://" + hostname + ":" + port + "/" + printerURI; 
+            printerURI = getAttributeValue(attr).replace("ipp" + (sslConn ? "s" : "") + "://", "http" + (sslConn ? "s" : "") +  "://");
+            printerURI = printerURI.replace("http" + (sslConn ? "s" : "") + "://", "");
+            printerURI = printerURI.substring(printerURI.indexOf("/") + 1);
+            printerURI = "http" + (sslConn ? "s" : "") + "://" + hostname + ":" + port + "/" + printerURI;
           } else if (attr.getName().equals("printer-name")) {
             printerName = getAttributeValue(attr);
           } else if (attr.getName().equals("printer-location")) {

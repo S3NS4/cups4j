@@ -48,8 +48,7 @@ public final class IppHttp {
 		 }
 	   httpPost.setConfig(requestConfig);
 
-	   if (creds != null && StringUtils.isNotBlank(creds.getUserid())
-	    		&& StringUtils.isNotBlank(creds.getPassword())) {
+	   if (creds != null && !creds.getUserid().isBlank() && !creds.getPassword().isBlank()) {
 		    String auth = creds.getUserid() + ":" + creds.getPassword();
 		    byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.ISO_8859_1));
 		    String authHeader = "Basic " + new String(encodedAuth);

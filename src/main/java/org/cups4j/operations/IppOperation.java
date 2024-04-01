@@ -64,9 +64,19 @@ public abstract class IppOperation {
     return sendRequest(printer, url, getIppHeader(url, map), creds);
   }
 
+  public IppResult request(CupsPrinter printer, URL url, Map<String, String> map,
+                           CupsAuthentication creds, boolean sslConn) throws Exception {
+    return sendRequest(printer, url, getIppHeader(url, map), creds, sslConn);
+  }
+
   public IppResult request(CupsPrinter printer, URL url, Map<String, String> map, InputStream document,
 		  CupsAuthentication creds) throws Exception {
     return sendRequest(printer, url, getIppHeader(url, map), document, creds);
+  }
+
+  public IppResult request(CupsPrinter printer, URL url, Map<String, String> map, InputStream document,
+                           CupsAuthentication creds, boolean sslConn) throws Exception {
+    return sendRequest(printer, url, getIppHeader(url, map), document, creds, sslConn);
   }
 
   /**
@@ -118,6 +128,25 @@ public abstract class IppOperation {
 
   /**
    * Sends a request to the provided URL
+   *
+   * @param url
+   * @param ippBuf
+   * @param sslConn
+   *          to use ssl connection or not (https or http)
+   * @return result
+   * @throws Exception
+   */
+  private IppResult sendRequest(CupsPrinter printer, URL url, ByteBuffer ippBuf,
+                                CupsAuthentication creds, boolean sslConn) throws Exception  {
+    IppResult result = sendRequest(printer, url, ippBuf, null, creds, sslConn);
+    if (result.getHttpStatusCode() >= 300) {
+      throw new IOException("HTTP error! Status code:  " + result.getHttpStatusResponse());
+    }
+    return result;
+  }
+
+  /**
+   * Sends a request to the provided URL
    * 
    * @param url
    * @param ippBuf
@@ -132,6 +161,77 @@ public abstract class IppOperation {
       throw new IOException("HTTP error! Status code:  " + result.getHttpStatusResponse());
     }
     return result;
+  }
+
+  /**
+   * Sends a request to the provided url
+   *
+   * @param url
+   * @param ippBuf
+   *
+   * @param documentStream
+   * @param sslConn
+   *
+   * @return result
+   * @throws Exception
+   */
+  private IppResult sendRequest(CupsPrinter printer, URL url, ByteBuffer ippBuf, InputStream documentStream, CupsAuthentication creds, boolean sslConn) throws Exception {
+    IppResult ippResult = null;
+    if (ippBuf == null) {
+      return null;
+    }
+
+    if (url == null) {
+      return null;
+    }
+
+    CloseableHttpClient client = IppHttp.createHttpClient();
+
+    HttpPost httpPost = new HttpPost(new URI("http" + (sslConn ? "s" : "") + "://" + url.getHost() + ":" + ippPort) + url.getPath());
+    IppHttp.setHttpHeaders(httpPost, printer, creds);
+
+    byte[] bytes = new byte[ippBuf.limit()];
+    ippBuf.get(bytes);
+
+    ByteArrayInputStream headerStream = new ByteArrayInputStream(bytes);
+
+    // If we need to send a document, concatenate InputStreams
+    InputStream inputStream = headerStream;
+    if (documentStream != null) {
+      inputStream = new SequenceInputStream(headerStream, documentStream);
+    }
+
+    // set length to -1 to advice the entity to read until EOF
+    InputStreamEntity requestEntity = new InputStreamEntity(inputStream, -1);
+
+    requestEntity.setContentType(IPP_MIME_TYPE);
+    httpPost.setEntity(requestEntity);
+
+    final IppHttpResult ippHttpResult = new IppHttpResult();
+    ippHttpResult.setStatusCode(-1);
+
+    ResponseHandler<byte[]> handler = new ResponseHandler<byte[]>() {
+      public byte[] handleResponse(HttpResponse response) throws ClientProtocolException, IOException {
+        HttpEntity entity = response.getEntity();
+        ippHttpResult.setStatusLine(response.getStatusLine().toString());
+        ippHttpResult.setStatusCode(response.getStatusLine().getStatusCode());
+        if (entity != null) {
+          return EntityUtils.toByteArray(entity);
+        } else {
+          return null;
+        }
+      }
+    };
+
+    byte[] result = client.execute(httpPost, handler);
+
+    IppResponse ippResponse = new IppResponse();
+
+    ippResult = ippResponse.getResponse(ByteBuffer.wrap(result));
+    ippResult.setHttpStatusResponse(ippHttpResult.getStatusLine());
+    ippResult.setHttpStatusCode(ippHttpResult.getStatusCode());
+
+    return ippResult;
   }
 
   /**
